@@ -1,0 +1,73 @@
+server:
+  port: 8080
+  servlet:
+    contextPath: /demo
+
+management:
+  endpoints:
+    web:
+      base-path: /
+      path-mapping:
+        health: health
+        beans: beans
+        metrics: metrics
+        httptrace: httptrace
+      exposure:
+        include: '*'
+  health:
+    mail:
+      enabled: false
+    db:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+
+spring:
+  flyway:
+    enabled: false
+  application:
+    name: demo
+  cloud:
+    stream:
+      rabbit:
+        bindings:
+          input:
+            consumer:
+              autoBindDlq: true
+              dlqTtl: 5000
+              dlqDeadLetterExchange: demo-api-events
+#              requeueRejected: true
+      bindings:
+        input:
+          destination: demo-api-events
+          binder: local_rabbit
+          group: demo-service
+          consumer:
+            maxAttempts: 1
+        park:
+          destination: demo-api-events-park
+          binder: local_rabbit
+        output:
+          destination: demo-api-events
+          binder: local_rabbit
+      binders:
+        local_rabbit:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest
+                virtual-host: /
+
+logging:
+  pattern:
+    console: "%d{dd-MM-yyyy HH:mm:ss.SSS} [%X{traceId}] [%-20thread] %-5level %logger{36} - %msg%n"
+  level:
+    org:
+      hibernate: info
+    com:
+      itv: info
